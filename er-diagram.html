@@ -1,0 +1,155 @@
+<meta charset="utf-8">
+<title>フリーランスマッチングDB 関連図（学習v2時点）</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; background:#f6f7f9; margin:0; padding:16px; color:#1f2430; }
+  h1 { font-size:18px; margin:4px 0 2px; }
+  .sub { font-size:12px; color:#667; margin-bottom:10px; }
+  .canvas { position:relative; width:1220px; height:880px; background:#fff; border:1px solid #e3e6ea; border-radius:12px; overflow:hidden; }
+  svg.wires { position:absolute; inset:0; width:100%; height:100%; }
+  .table { position:absolute; background:#fff; border:1.5px solid #b9c2cf; border-radius:8px; box-shadow:0 2px 6px rgba(30,40,60,.08); font-size:12px; overflow:hidden; }
+  .thead { background:#2f4a6b; color:#fff; font-weight:600; padding:7px 10px; font-size:12.5px; }
+  .junction .thead { background:#6b7f2f; }
+  .pending { border:1.5px dashed #c07a2a; }
+  .pending .thead { background:#c07a2a; }
+  .row { padding:4px 10px; border-top:1px solid #eef1f4; line-height:16px; }
+  .pk { font-weight:600; }
+  .pk::before { content:"🔑 "; font-size:10px; }
+  .fk { color:#2b6cb0; }
+  .fk::before { content:"🔗 "; font-size:10px; }
+  .new { background:#f2f8ec; }
+  .q { color:#c07a2a; font-weight:700; }
+  .note { position:absolute; left:900px; top:300px; width:290px; background:#fffaf0; border:1px solid #e8d8b0; border-radius:8px; font-size:12px; padding:10px 12px; }
+  .note h3 { margin:0 0 6px; font-size:12.5px; }
+  .note li { margin-bottom:6px; }
+  .legend { position:absolute; left:900px; top:560px; width:290px; background:#f4f7fb; border:1px solid #d7e0ec; border-radius:8px; font-size:12px; padding:10px 12px; }
+  text { font-family:inherit; }
+</style>
+
+<h1>フリーランスマッチングサービス DB関連図</h1>
+<div class="sub">学習ラウンド2時点 ｜ 線の端の <b>1</b>/<b>N</b> は「1件に対して相手が何件ぶら下がるか」 ｜ 🟢緑の行 = v2で追加した属性</div>
+
+<div class="canvas">
+  <svg class="wires" viewBox="0 0 1220 880">
+    <g stroke="#8fa1b8" stroke-width="1.6" fill="none">
+      <line x1="230" y1="125" x2="330" y2="125"/>                      <!-- companies - jobs -->
+      <line x1="520" y1="80"  x2="650" y2="80"/>                       <!-- jobs - job_skills -->
+      <line x1="940" y1="150" x2="840" y2="90"/>                       <!-- skills - job_skills -->
+      <line x1="940" y1="175" x2="850" y2="280"/>                      <!-- skills - freelancer_skills -->
+      <line x1="230" y1="360" x2="650" y2="300"/>                      <!-- freelancers - freelancer_skills -->
+      <line x1="430" y1="222" x2="430" y2="330"/>                      <!-- jobs - applications -->
+      <line x1="230" y1="410" x2="330" y2="397"/>                      <!-- freelancers - applications -->
+      <path d="M330,190 L300,190 L300,680 L330,680"/>                  <!-- jobs - contracts -->
+      <path d="M100,478 L100,790 L330,790"/>                           <!-- freelancers - contracts -->
+    </g>
+    <g stroke="#8fa1b8" stroke-width="1.6" fill="none">
+      <line x1="520" y1="420" x2="620" y2="530"/>                      <!-- applications - status_histories -->
+    </g>
+    <g stroke="#c07a2a" stroke-width="1.6" fill="none" stroke-dasharray="6 4">
+      <path d="M530,690 C580,690 580,770 530,770"/>                    <!-- contracts self (巻き直し案) -->
+    </g>
+    <g font-size="12" font-weight="700" fill="#44536a">
+      <text x="238" y="119">1</text><text x="314" y="119">N</text>
+      <text x="528" y="74">1</text><text x="634" y="74">N</text>
+      <text x="922" y="146">1</text><text x="848" y="102">N</text>
+      <text x="922" y="186">1</text><text x="856" y="272">N</text>
+      <text x="238" y="352">1</text><text x="632" y="296">N</text>
+      <text x="436" y="238">1</text><text x="436" y="324">N</text>
+      <text x="238" y="404">1</text><text x="314" y="390">N</text>
+      <text x="306" y="206">1</text><text x="308" y="672">N</text>
+      <text x="106" y="494">1</text><text x="314" y="784">N</text>
+    </g>
+    <g font-size="12" font-weight="700" fill="#44536a">
+      <text x="528" y="436">1</text><text x="606" y="524">N</text>
+    </g>
+    <g font-size="12" font-weight="700" fill="#c07a2a">
+      <text x="565" y="745">巻き直し案</text>
+    </g>
+  </svg>
+
+  <div class="table" style="left:40px; top:70px; width:190px">
+    <div class="thead">companies（企業）</div>
+    <div class="row pk">id</div>
+    <div class="row">name</div>
+    <div class="row">email</div>
+  </div>
+
+  <div class="table" style="left:330px; top:40px; width:190px">
+    <div class="thead">jobs（案件）</div>
+    <div class="row pk">id</div>
+    <div class="row fk">company_id</div>
+    <div class="row">title</div>
+    <div class="row">body</div>
+    <div class="row">min_単価</div>
+    <div class="row">max_単価</div>
+  </div>
+
+  <div class="table junction" style="left:650px; top:40px; width:190px">
+    <div class="thead">job_skills（中間）</div>
+    <div class="row fk">job_id</div>
+    <div class="row fk">skill_id</div>
+  </div>
+
+  <div class="table" style="left:940px; top:120px; width:170px">
+    <div class="thead">skills</div>
+    <div class="row pk">id</div>
+    <div class="row">name</div>
+  </div>
+
+  <div class="table junction" style="left:650px; top:240px; width:200px">
+    <div class="thead">freelancer_skills（中間）</div>
+    <div class="row fk">freelancer_id</div>
+    <div class="row fk">skill_id</div>
+    <div class="row new">経験年数</div>
+  </div>
+
+  <div class="table" style="left:40px; top:320px; width:190px">
+    <div class="thead">freelancers</div>
+    <div class="row pk">id</div>
+    <div class="row">name</div>
+    <div class="row">email</div>
+    <div class="row">自己紹介</div>
+    <div class="row">希望単価</div>
+  </div>
+
+  <div class="table" style="left:330px; top:330px; width:190px">
+    <div class="thead">applications（応募）</div>
+    <div class="row pk">id</div>
+    <div class="row fk">job_id</div>
+    <div class="row fk">freelancer_id</div>
+    <div class="row">status（現在値）</div>
+  </div>
+
+  <div class="table" style="left:620px; top:480px; width:240px">
+    <div class="thead">application_status_histories</div>
+    <div class="row pk">id</div>
+    <div class="row fk new">application_id</div>
+    <div class="row">status</div>
+    <div class="row">changed_at</div>
+  </div>
+
+  <div class="table" style="left:330px; top:620px; width:200px">
+    <div class="thead">contracts（契約）</div>
+    <div class="row pk">id</div>
+    <div class="row fk">job_id</div>
+    <div class="row fk">freelancer_id</div>
+    <div class="row">単価</div>
+    <div class="row">start_date</div>
+    <div class="row">finish_date</div>
+    <div class="row new">previous_contract_id（案）</div>
+  </div>
+
+  <div class="note">
+    <h3>🟠 残る論点は1つ</h3>
+    <ul style="margin:0; padding-left:16px">
+      <li><b>✅ 履歴テーブルの紐付け先</b> — application_id に確定（2026-07-18）。エンティティ(応募)1件にイベント(状態変化)N件</li>
+      <li><b>契約の単価改定</b> — 契約を巻き直して previous_contract_id で数珠つなぎにする案。業務の実態次第で「単価履歴テーブル」方式もあり</li>
+    </ul>
+  </div>
+
+  <div class="legend">
+    <b>凡例</b>
+    <div class="row pk" style="border:none; padding-left:0">主キー（その行を一意に指す）</div>
+    <div class="row fk" style="border:none; padding-left:0">外部キー（他テーブルの id を指す）</div>
+    <div style="margin-top:4px">紺ヘッダ = エンティティ ／ 緑ヘッダ = 中間テーブル ／ 橙点線 = 未確定</div>
+  </div>
+</div>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB設計 学習ノート — フリーランスマッチング編</title>
+<style>
+  :root {
+    --bg:#f7f8fa; --card:#fff; --ink:#1f2430; --sub:#5b6472; --line:#e4e8ee;
+    --blue:#2f4a6b; --blue-soft:#eef3f9; --green:#4a7a2f; --green-soft:#f0f7e9;
+    --orange:#c07a2a; --orange-soft:#fdf6ec; --red:#b3423a; --red-soft:#fbeeed;
+    --code-bg:#22283a; --code-ink:#e7ecf5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#14171c; --card:#1c2129; --ink:#e6eaf0; --sub:#9aa4b2; --line:#2c333d;
+      --blue:#7ea7d8; --blue-soft:#1e2836; --green:#93c46f; --green-soft:#1f2a1a;
+      --orange:#e0a35c; --orange-soft:#2e2618; --red:#e08a83; --red-soft:#301d1c;
+      --code-bg:#0f1420; --code-ink:#dce4f2;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px 16px 80px; background:var(--bg); color:var(--ink);
+         font-family:-apple-system,"Hiragino Sans",sans-serif; line-height:1.75; }
+  .wrap { max-width:860px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .lede { color:var(--sub); font-size:14px; margin-bottom:24px; }
+  .toc { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 20px; font-size:14px; margin-bottom:28px; }
+  .toc a { color:var(--blue); text-decoration:none; }
+  .toc li { margin:2px 0; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:14px;
+            padding:24px 26px; margin-bottom:26px; }
+  h2 { font-size:20px; margin:0 0 2px; }
+  .round-tag { display:inline-block; font-size:12px; font-weight:700; color:#fff;
+               background:var(--blue); border-radius:99px; padding:2px 12px; margin-bottom:8px; }
+  h3 { font-size:16px; margin:22px 0 8px; border-left:4px solid var(--blue); padding-left:10px; }
+  p { margin:8px 0; font-size:14.5px; }
+  .rule { background:var(--blue-soft); border-radius:10px; padding:12px 16px; margin:12px 0;
+          font-size:14.5px; }
+  .rule b:first-child { color:var(--blue); }
+  .accident { background:var(--red-soft); border-left:4px solid var(--red); border-radius:0 10px 10px 0;
+              padding:10px 16px; margin:12px 0; font-size:14px; }
+  .accident::before { content:"💥 失敗シナリオ　"; font-weight:700; color:var(--red); }
+  .mywin { background:var(--green-soft); border-left:4px solid var(--green); border-radius:0 10px 10px 0;
+           padding:10px 16px; margin:12px 0; font-size:14px; }
+  .mywin::before { content:"🏆 自分でできたこと　"; font-weight:700; color:var(--green); }
+  .analogy { background:var(--orange-soft); border-radius:10px; padding:12px 16px; margin:12px 0; font-size:14px; }
+  .analogy::before { content:"🗣️ 例え話　"; font-weight:700; color:var(--orange); }
+  pre { background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px;
+        font-size:13px; line-height:1.6; overflow-x:auto; margin:10px 0; }
+  code { font-family:"SF Mono",Menlo,monospace; }
+  p code, li code, td code { background:var(--blue-soft); border-radius:4px; padding:1px 6px; font-size:13px; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin:10px 0; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--blue-soft); }
+  ul { margin:6px 0; padding-left:22px; font-size:14.5px; }
+  li { margin:4px 0; }
+  .cheat { border:2px solid var(--blue); }
+  .cheat h2 { color:var(--blue); }
+  .small { color:var(--sub); font-size:12.5px; }
+  footer { text-align:center; color:var(--sub); font-size:12.5px; margin-top:30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🗄️ DB設計 学習ノート</h1>
+<div class="lede">題材: フリーランスマッチングサービス ｜ 2026-07-18〜19 セッション1の全記録 ｜ 実験台: <code>~/workspace/personal/db-design-study/matching.db</code>（10万人・100万行の実データ）</div>
+
+<div class="toc">
+  <b>目次</b>
+  <ol>
+    <li><a href="#r1">エンティティ設計 — 中間テーブルは「1つの関係」につき1つ</a></li>
+    <li><a href="#r2">履歴とイベント — 上書きは過去を消す</a></li>
+    <li><a href="#r3">インデックス理論 — DBは何もしなければ全行読む</a></li>
+    <li><a href="#r4">正規化 — 1つの事実は1箇所にだけ書く</a></li>
+    <li><a href="#r5">実機で実証 — EXPLAIN は嘘をつかない</a></li>
+    <li><a href="#cheat">⚡ 迷ったとき30秒チートシート</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<section id="r1">
+  <span class="round-tag">ラウンド1</span>
+  <h2>エンティティ設計 — 中間テーブルは「1つの関係」につき1つ</h2>
+
+  <h3>多対多には中間テーブル</h3>
+  <p>「フリーランスはスキルを複数持つ」「案件もスキルを複数要求する」——多対多の関係は、<b>関係そのものを1行とするテーブル</b>（中間テーブル）で表す。<code>skill1, skill2, skill3</code> と列を並べる設計は最初の罠。</p>
+
+  <h3>最重要: 1つの中間テーブル = 1つの関係</h3>
+  <p>最初の設計では <code>(skill_id, freelance_id, job_id)</code> の3方向テーブルを作ってしまった。これは「人がスキルを持つ」と「案件がスキルを要る」という<b>独立した2つの関係の同居</b>。</p>
+  <div class="accident">田中さんが TypeScript を登録したい。でもまだどの案件にも応募していない。3方向テーブルに入れる行の job_id は…何を入れる？ NULL？ → <b>片方しか存在しないケースで必ず破綻する</b>。</div>
+  <div class="mywin">指摘を受けて <code>freelancer_skills</code> と <code>job_skills</code> の2テーブルに自力で分解できた（後のラウンド4で判明: これは第4正規形の判断）。</div>
+
+  <h3>その他の教訓</h3>
+  <ul>
+    <li>要件に登場する登場人物（企業）を<b>テーブルとして落とさない</b>と、「この企業の案件一覧」が出せない。要件文とテーブル一覧を突き合わせる</li>
+    <li>全テーブルに<b>主キー（id）</b>があるか指差し確認。無いと他所から参照できない</li>
+    <li>カラム名のタイポは後から直すのが大変（参照するコード全部が壊れる）。DDLを書く段階で見直す</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="r2">
+  <span class="round-tag">ラウンド2</span>
+  <h2>履歴とイベント — 上書きは過去を消す</h2>
+
+  <h3>行を積む vs 上書きする</h3>
+  <div class="rule"><b>原則:</b> UPDATE で上書きすると過去が消える。履歴が欲しいものは <b>INSERT で行を積む</b>。</div>
+  <p>応募ステータス（応募中→書類通過→面談→成約）の変化を追いたい → ステータス変更のたびにレコードを作る、という発想は正しい。ただし<b>置き場所</b>が肝心。</p>
+
+  <h3>エンティティとイベントは別テーブル</h3>
+  <div class="accident">応募(applications)テーブル自身に履歴行を積むと、「田中×案件A」の行が3行に。応募者数を COUNT すると水増しされ、二重応募禁止の UNIQUE 制約も張れず、contracts が指す application_id はどの行か分からなくなる。</div>
+  <p><b>応募というモノ（1つ）</b>と<b>状態が変わったという出来事（複数）</b>は数が違う。数が違うものは別テーブル:</p>
+  <pre>applications                     … 応募1件につき1行（現在の status はここ）
+application_status_histories     … id, application_id, status, changed_at</pre>
+
+  <h3>履歴は「直近の親」に繋ぐ</h3>
+  <div class="accident">履歴を freelance_id に繋ぐと、案件Aと案件Bに同時応募中のとき「この書類通過はどっちの応募？」が特定できない。応募を飛び越えて人に繋いではいけない。</div>
+  <div class="mywin">失敗シナリオを見て application_id への付け替えを自力で答えられた。</div>
+
+  <h3>細かい定石</h3>
+  <ul>
+    <li>日時カラム名は「出来事＋at」（<code>changed_at</code> / <code>applied_at</code>）。<code>date</code> は何の日付か読めない</li>
+    <li>設計の正解は SQL ではなく<b>業務が決める</b>。契約単価の改定 → 「契約を巻き直す」業務なら新契約行＋<code>previous_contract_id</code>、「同一契約の改定」なら単価履歴テーブル。どちらも defensible</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="r3">
+  <span class="round-tag">ラウンド3</span>
+  <h2>インデックス理論 — DBは何もしなければ全行読む</h2>
+
+  <h3>フルスキャンとインデックス</h3>
+  <p>DBは指示がなければ<b>1行目から最終行まで全部読む</b>（フルスキャン）。それを避ける道具がインデックス＝「その列の値で並べた目次」。</p>
+  <div class="analogy">紙の辞書で「リンゴ」を引くとき1ページ目からめくる人はいない。<b>五十音順と知っているから一発で近くを開ける</b>。それが目次（B-tree インデックス）。</div>
+  <div class="rule"><b>ルール1:</b> 主キーには自動でインデックスが付く。<b>それ以外の列には自分で張らない限り目次は存在しない</b>。<br>
+  <b>ルール2:</b> タダではない。行を書くたび目次も並べ直すので、<b>張るほど書き込みが遅くなる</b>。効かない目次は張らない。</div>
+
+  <h3>どこに張るか = 「大きいテーブル」の「一番絞れる列」</h3>
+  <p>「経験3年以上」は50万行中25万行該当（半分） → 目次があっても大差ない。「skill_id = TypeScript」は50万→5千行（100分の1） → 劇的に効く。この「どれだけ一気に絞れるか」を<b>選択性</b>と呼ぶ。</p>
+
+  <h3>複合インデックスは電話帳</h3>
+  <div class="analogy">電話帳は「姓→名」の順に並んでいるから「佐藤さんの中の太郎さん」が一発で引ける。<code>(skill_id, 経験年数)</code> は「スキルごとに並べ、その中を経験年数順に並べた」目次。</div>
+  <pre>CREATE INDEX idx_fs_skill_years ON freelancer_skills (skill_id, 経験年数);
+--                                   ↑ ＝で絞る列が先、範囲(&gt;=)で絞る列が後。順番が命</pre>
+
+  <h3>テーブルの太り方は予言できる</h3>
+  <div class="rule"><b>法則:</b> 1対Nの線が1本増えるたび、N側は「親の数×平均個数」で太る。<b>中間・履歴テーブルは本体の数倍〜数十倍</b>に育つ。ER図の「Nの端」を見れば将来重くなる場所が読める。</div>
+  <table>
+    <tr><th>テーブル</th><th>行数の目安</th></tr>
+    <tr><td>freelancers（本体）</td><td>10万</td></tr>
+    <tr><td>freelancer_skills（中間）</td><td>50万〜100万</td></tr>
+    <tr><td>applications</td><td>100万</td></tr>
+    <tr><td>application_status_histories（履歴）</td><td>300万+</td></tr>
+  </table>
+
+  <h3>created_at / updated_at は全テーブルに最初から</h3>
+  <p>「登録が新しい順」という要件が来た瞬間、日時カラムが無いと詰む。<b>後から「いつ作られたか」は復元できない</b>。</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="r4">
+  <span class="round-tag">ラウンド4</span>
+  <h2>正規化 — 1つの事実は1箇所にだけ書く</h2>
+
+  <h3>更新アノマリー（正規化が防ぐ事故）</h3>
+  <div class="accident">「JOINが面倒だから jobs にも company_name を持たせよう」→ 社名は companies に1箇所＋jobs に100箇所の計101箇所に。社名変更で jobs 側の更新が漏れると、DBに新旧2つの社名が併存。<b>どちらが正か、DBのどこにも書かれていない</b>——真実の在り処（Source of Truth）がDBの外（当時の設計者の頭の中）に漏れ出す。これが「面倒」ではなく「事故」。</div>
+  <div class="rule"><b>正規化の一言定義:</b> 1つの事実は、1箇所にだけ書く。<br>
+  <b>実務の判定質問:</b> 「この列は、この行の主キーに付随する事実か？ それとも別の誰かの事実の<b>コピー</b>か？」</div>
+
+  <h3>自分の判断に付いていた名前</h3>
+  <table>
+    <tr><th>やったこと</th><th>教科書上の名前</th></tr>
+    <tr><td>skill1, skill2, skill3 と列を並べず別テーブル＋中間に</td><td><b>第1正規形</b>（繰り返し項目の排除）</td></tr>
+    <tr><td>jobs への company_name コピーを却下</td><td><b>第3正規形</b>（キー以外への依存の排除）</td></tr>
+    <tr><td>履歴から freelance_id を排除（application 経由で辿れる）</td><td><b>第3正規形</b>（辿れる事実の重複排除）</td></tr>
+    <tr><td>3方向テーブルを2つの中間テーブルに分解</td><td><b>第4正規形</b>（独立した多対多の分離）</td></tr>
+  </table>
+
+  <h3>逆回転: あえてコピーが正しいケース（スナップショット）</h3>
+  <div class="rule"><b>判断基準:</b> 元データが変わったとき——<b>追従すべき</b>なら、コピーは事故（正規化する）。<b>当時のまま凍結すべき</b>なら、コピーこそ正しい（スナップショット）。</div>
+  <ul>
+    <li>❌ applications に freelancer_name → 改名に追従すべき情報。JOINで取る</li>
+    <li>⭕ 注文明細の unit_price、発行済み見積書の宛先社名・単価 → 過去の合意の記録。凍結が正しい</li>
+    <li>kintone のルックアップフィールドはまさに「コピーして持つ」設計。マスタ変更に追従しないのは、この意図的スナップショット（と、事故の両面がある）</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="r5">
+  <span class="round-tag">ラウンド5</span>
+  <h2>実機で実証 — EXPLAIN は嘘をつかない</h2>
+  <p class="small">SQLite・freelancer_skills 100万行の実データで計測（2026-07-19）。手順は README.md 参照。</p>
+
+  <h3>実行計画の読み方は2単語でいい</h3>
+  <pre>|--SCAN fs                                     ← 😱 全行読み（100万行）
+|--SEARCH f USING INTEGER PRIMARY KEY          ← 目次で一発
+`--USE TEMP B-TREE FOR ORDER BY                ← 並び替え用の目次をその場で毎回作成</pre>
+  <div class="rule"><b>SCAN</b> = 全行読み ／ <b>SEARCH ... USING INDEX</b> = 目次で短絡。この2つを見分ければ実行計画は半分読めた。</div>
+
+  <h3>「張る」と「使われる」は別イベント</h3>
+  <div class="accident">CREATE INDEX したのに実行計画は SCAN のまま、時間も変わらない。→ プランナが統計情報を知らないと目次を使ってくれない。<code>ANALYZE</code> を流したら採用され、<b>61ms → 19ms（約3倍）</b>になった。「インデックスが効かない」時はまず統計を疑う。</div>
+
+  <h3>左端プレフィックスの実証</h3>
+  <p>複合主キー <code>(freelancer_id, skill_id)</code> の自動インデックスがあるのに、skill_id からの検索には使われない——同じテーブルへの2方向の質問で実証:</p>
+  <pre>WHERE freelancer_id = 42  → SEARCH ... USING INDEX (freelancer_id=?)  ✅
+WHERE skill_id = 1        → SCAN                                       ❌</pre>
+  <p>skill_id=1 の行は<b>全員のブロックに1行ずつ散らばっている</b>から、どこか1箇所を開いても全部は見つからない。複合インデックスは<b>左の列から順にしか効かない</b>。主キーは1テーブル1つだが、<b>インデックスは何本でも張れる</b>——中間テーブルの「PK <code>(a,b)</code> ＋ 逆順 <code>(b,a)</code> の2本構成」は頻出パターン。</p>
+
+  <h3>最適解は計測が決める</h3>
+  <div class="mywin"><code>CREATE INDEX skill_id ON freelancer_skills (skill_id, freelancer_id);</code> を自力で書き、教科書解 <code>(skill_id, 経験年数)</code> と実測勝負して<b>引き分け</b>（19ms vs 21ms）。範囲列「経験3年以上」は該当73%で選択性が低く、絞り込みはほぼ等号列が稼いでいたため。しかも自作の方が他の検索に使い回せて汎用性は上。</div>
+  <div class="rule"><b>教訓:</b> 「教科書的な最適」と「実測」は別物。最後は EXPLAIN と計測で決める。範囲列は選択性が低ければ複合に入れても効かない。</div>
+
+  <h3>ORDER BY にはタイブレーク</h3>
+  <p><code>ORDER BY created_at DESC</code> だけだと同値内の順序が<b>不定</b>で実行のたびに変わる（ページネーションで人がダブる事故の原因）。定石は <code>ORDER BY created_at DESC, id DESC</code>。</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="cheat" class="cheat">
+  <h2>⚡ 迷ったとき30秒チートシート</h2>
+  <ul>
+    <li><b>多対多？</b> → 中間テーブル。ただし1テーブル1関係。関係の属性（経験年数）は中間テーブルへ</li>
+    <li><b>履歴が欲しい？</b> → 上書きせず行を積む。エンティティとイベントは別テーブル。履歴は直近の親に繋ぐ</li>
+    <li><b>コピーを持ちたい？</b> → 元が変わったら追従すべき？（→持つな、JOINしろ）凍結すべき？（→スナップショット、持ってよし）</li>
+    <li><b>遅い？</b> → EXPLAIN で SCAN を探す → 大きいテーブルの一番絞れる列に INDEX → ＝が先・範囲が後 → ANALYZE → 再計測</li>
+    <li><b>ER図を描いたら</b> → Nの端のテーブルは本体の数十倍に太ると予言しておく</li>
+    <li><b>全テーブル共通</b> → id（主キー）、created_at / updated_at、ORDER BY にはタイブレーク列</li>
+    <li><b>設計に迷ったら</b> → 正解は SQL ではなく業務が決める。失敗シナリオを1つ作って設計にぶつけてみる</li>
+  </ul>
+</section>
+
+<footer>DB設計学習セッション1（2026-07-18〜19）の記録 ｜ 実験の再現: <code>db-design-study/README.md</code> ｜ 次回候補: トランザクション / N+1問題</footer>
+</div>
+</body>
+</html>

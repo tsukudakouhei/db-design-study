@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB設計 学習ノート 図解版</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --sub: #5c6470;
+    --line: #e4e7ec;
+    --accent: #2563eb;
+    --bg: #fafbfc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.7;
+  }
+  .page { max-width: 960px; margin: 0 auto; padding: 48px 32px 96px; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 24px; margin-bottom: 48px; }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: 0.02em; }
+  .meta { color: var(--sub); font-size: 13px; margin-top: 8px; }
+  .purpose { font-size: 16px; margin-top: 16px; color: var(--ink); }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 18px; font-weight: 700; color: var(--accent);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  h2::before { content: ""; width: 6px; height: 22px; background: var(--accent); border-radius: 3px; }
+  figure { margin: 0; }
+  figure img, figure svg {
+    width: 100%; height: auto; border: 1px solid var(--line);
+    border-radius: 10px; background: #fff; display: block;
+  }
+  figcaption { color: var(--sub); font-size: 13px; margin-top: 8px; text-align: center; }
+  .figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: start; }
+  .figs.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px) { .figs, .figs.cols-2 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; }
+  th, td { border: 1px solid var(--line); padding: 10px 14px; text-align: left; }
+  th { background: #f1f4f8; font-weight: 600; white-space: nowrap; }
+  ul.risks { list-style: none; }
+  ul.risks li { padding: 10px 14px; background: #fff7ed; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 14px; }
+  /* SVG共通 */
+  svg { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  svg .box  { fill: #fff; stroke: #2563eb; stroke-width: 1.5; }
+  svg .jbox { fill: #f0fdf4; stroke: #16a34a; stroke-width: 1.5; }
+  svg .gbox { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.2; }
+  svg .bad  { fill: #fef2f2; stroke: #dc2626; stroke-width: 1.5; }
+  svg .t    { font-size: 13px; font-weight: 600; fill: #1a1d23; }
+  svg .s    { font-size: 11px; fill: #5c6470; }
+  svg .ln   { stroke: #5c6470; stroke-width: 1.2; fill: none; }
+  svg .lbl  { font-size: 11px; font-weight: 700; fill: #5c6470; }
+  svg .badt { font-size: 12px; font-weight: 700; fill: #dc2626; }
+  svg .okt  { font-size: 12px; font-weight: 700; fill: #16a34a; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>🗄️ DB設計 学習ノート 図解版</h1>
+    <div class="meta">2026-07-19 ・ 学習セッション1</div>
+    <p class="purpose">DB設計学習セッション1（全5ラウンド）の学びを図で俯瞰する。詳細は study-notes.html、再現は matching.db。</p>
+  </header>
+
+  <section>
+    <h2>全体データモデル</h2>
+    <figure>
+      <svg viewBox="0 0 900 430" role="img" aria-label="ER図">
+        <path class="ln" d="M150,77 H220"/><text class="lbl" x="156" y="72">1</text><text class="lbl" x="206" y="72">N</text>
+        <path class="ln" d="M340,62 H430"/><text class="lbl" x="346" y="57">1</text><text class="lbl" x="416" y="57">N</text>
+        <path class="ln" d="M640,128 L550,72"/><text class="lbl" x="622" y="120">1</text><text class="lbl" x="556" y="86">N</text>
+        <path class="ln" d="M640,140 L580,188"/><text class="lbl" x="622" y="152">1</text><text class="lbl" x="586" y="184">N</text>
+        <path class="ln" d="M150,255 L430,195"/><text class="lbl" x="156" y="249">1</text><text class="lbl" x="412" y="202">N</text>
+        <path class="ln" d="M280,79 V240"/><text class="lbl" x="286" y="95">1</text><text class="lbl" x="286" y="234">N</text>
+        <path class="ln" d="M150,268 L220,258"/><text class="lbl" x="156" y="262">1</text><text class="lbl" x="206" y="252">N</text>
+        <path class="ln" d="M340,258 L430,325"/><text class="lbl" x="346" y="252">1</text><text class="lbl" x="414" y="320">N</text>
+        <path class="ln" d="M220,70 H195 V377 H220"/><text class="lbl" x="200" y="64">1</text><text class="lbl" x="202" y="372">N</text>
+        <path class="ln" d="M90,274 V395 H220"/><text class="lbl" x="96" y="290">1</text><text class="lbl" x="206" y="390">N</text>
+        <rect class="box" x="30" y="60" width="120" height="34" rx="8"/><text class="t" x="90" y="82" text-anchor="middle">companies</text>
+        <rect class="box" x="220" y="45" width="120" height="34" rx="8"/><text class="t" x="280" y="67" text-anchor="middle">jobs</text>
+        <rect class="jbox" x="430" y="45" width="120" height="34" rx="8"/><text class="t" x="490" y="67" text-anchor="middle">job_skills</text>
+        <rect class="box" x="640" y="113" width="100" height="34" rx="8"/><text class="t" x="690" y="135" text-anchor="middle">skills</text>
+        <rect class="jbox" x="430" y="175" width="150" height="34" rx="8"/><text class="t" x="505" y="197" text-anchor="middle">freelancer_skills</text>
+        <rect class="box" x="30" y="240" width="120" height="34" rx="8"/><text class="t" x="90" y="262" text-anchor="middle">freelancers</text>
+        <rect class="box" x="220" y="240" width="120" height="34" rx="8"/><text class="t" x="280" y="262" text-anchor="middle">applications</text>
+        <rect class="box" x="430" y="310" width="210" height="34" rx="8"/><text class="t" x="535" y="332" text-anchor="middle">application_status_histories</text>
+        <rect class="box" x="220" y="360" width="120" height="34" rx="8"/><text class="t" x="280" y="382" text-anchor="middle">contracts</text>
+        <text class="s" x="660" y="330">緑 = 中間テーブル</text>
+        <text class="s" x="660" y="348">1—N: 本体の数十倍に太る</text>
+      </svg>
+      <figcaption>フリーランスマッチングの全体データモデル</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>中間テーブルの原則</h2>
+    <div class="figs cols-2">
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="3方向テーブルNG">
+          <path class="ln" d="M140,72 L330,140"/>
+          <path class="ln" d="M140,172 L330,172"/>
+          <path class="ln" d="M140,272 L330,205"/>
+          <rect class="box" x="30" y="55" width="110" height="34" rx="8"/><text class="t" x="85" y="77" text-anchor="middle">freelancers</text>
+          <rect class="box" x="30" y="155" width="110" height="34" rx="8"/><text class="t" x="85" y="177" text-anchor="middle">jobs</text>
+          <rect class="box" x="30" y="255" width="110" height="34" rx="8"/><text class="t" x="85" y="277" text-anchor="middle">skills</text>
+          <rect class="bad" x="330" y="110" width="250" height="130" rx="10"/>
+          <text class="t" x="455" y="135" text-anchor="middle">freelancer_jobs_skills</text>
+          <line x1="345" y1="146" x2="565" y2="146" stroke="#dc2626" stroke-width="1"/>
+          <text class="s" x="345" y="168">freelance_id = 田中</text>
+          <text class="s" x="345" y="190">skill_id = TypeScript</text>
+          <text class="badt" x="345" y="215">job_id = NULL ？？</text>
+          <polygon points="455,60 475,95 435,95" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+          <text class="badt" x="455" y="89" text-anchor="middle">!</text>
+          <text class="badt" x="455" y="275" text-anchor="middle">応募していないスキルは登録不能</text>
+        </svg>
+        <figcaption>独立した2つの関係の同居は NULL で破綻</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="中間テーブル2つに分解">
+          <path class="ln" d="M160,77 H240"/><path class="ln" d="M390,77 L470,140"/>
+          <path class="ln" d="M160,217 H240"/><path class="ln" d="M390,217 L470,158"/>
+          <rect class="box" x="30" y="60" width="130" height="34" rx="8"/><text class="t" x="95" y="82" text-anchor="middle">freelancers</text>
+          <rect class="jbox" x="240" y="60" width="150" height="34" rx="8"/><text class="t" x="315" y="82" text-anchor="middle">freelancer_skills</text>
+          <rect class="box" x="30" y="200" width="130" height="34" rx="8"/><text class="t" x="95" y="222" text-anchor="middle">jobs</text>
+          <rect class="jbox" x="240" y="200" width="150" height="34" rx="8"/><text class="t" x="315" y="222" text-anchor="middle">job_skills</text>
+          <rect class="box" x="470" y="130" width="100" height="34" rx="8"/><text class="t" x="520" y="152" text-anchor="middle">skills</text>
+          <circle cx="315" cy="120" r="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/><text class="okt" x="315" y="125" text-anchor="middle">✓</text>
+          <circle cx="315" cy="260" r="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/><text class="okt" x="315" y="265" text-anchor="middle">✓</text>
+          <text class="okt" x="315" y="310" text-anchor="middle">1つの関係 = 1つの中間テーブル</text>
+          <text class="s" x="315" y="328" text-anchor="middle">関係の属性（経験年数）もここに置く</text>
+        </svg>
+        <figcaption>関係ごとに中間テーブルを分ける</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>履歴の持ち方</h2>
+    <div class="figs cols-2">
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="UPDATEは過去を消す">
+          <rect class="box" x="150" y="70" width="320" height="70" rx="10"/>
+          <text class="t" x="170" y="98">applications</text>
+          <text class="s" x="170" y="122">status: <tspan font-weight="700" fill="#1a1d23">面談</tspan></text>
+          <path d="M480,105 C540,105 540,50 480,50 L430,50" class="ln" stroke="#dc2626" stroke-width="2"/>
+          <polygon points="430,50 442,44 442,56" fill="#dc2626"/>
+          <text class="badt" x="530" y="85">UPDATE</text>
+          <rect x="150" y="190" width="320" height="46" rx="10" fill="none" stroke="#94a3b8" stroke-dasharray="6 4" opacity="0.6"/>
+          <text class="s" x="170" y="218" opacity="0.55">status: 書類通過（7/8 の事実）</text>
+          <line x1="160" y1="213" x2="460" y2="213" stroke="#dc2626" stroke-width="1.5" opacity="0.7"/>
+          <text class="badt" x="310" y="285" text-anchor="middle">「書類通過→面談は何日？」が永遠に答えられない</text>
+        </svg>
+        <figcaption>UPDATE は過去の事実を消す</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="イベントは行を積む">
+          <path class="ln" d="M240,120 L330,120"/><text class="lbl" x="246" y="114">1</text><text class="lbl" x="316" y="114">N</text>
+          <rect class="box" x="40" y="95" width="200" height="52" rx="10"/>
+          <text class="t" x="60" y="117">applications</text>
+          <text class="s" x="60" y="137">id:1 ・ 田中 × 案件A</text>
+          <g>
+            <rect class="jbox" x="330" y="40"  width="250" height="34" rx="8"/><text class="s" x="348" y="62">応募中　　7/1</text>
+            <rect class="jbox" x="330" y="82"  width="250" height="34" rx="8"/><text class="s" x="348" y="104">書類通過　7/8</text>
+            <rect class="jbox" x="330" y="124" width="250" height="34" rx="8"/><text class="s" x="348" y="146">面談　　　7/15</text>
+            <rect class="jbox" x="330" y="166" width="250" height="34" rx="8"/><text class="s" x="348" y="188">成約　　　7/20</text>
+          </g>
+          <text class="okt" x="330" y="232">＋ INSERT（積むだけ・消さない）</text>
+          <text class="s" x="330" y="256">application_status_histories</text>
+          <text class="okt" x="310" y="300" text-anchor="middle">モノは1行のまま・出来事は行を積む</text>
+        </svg>
+        <figcaption>イベントは INSERT で行を積んで残す</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>インデックスの方向</h2>
+    <div class="figs cols-2">
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="左端が違う複合インデックスは効かない">
+          <text class="t" x="40" y="40">目次 (freelancer_id, skill_id)</text>
+          <g>
+            <rect class="gbox" x="40" y="60" width="160" height="100" rx="8"/><text class="s" x="52" y="80">人1</text>
+            <text class="s" x="60" y="102">skill 8</text><text class="s" x="60" y="122">skill 15</text>
+            <rect class="bad" x="55" y="130" width="130" height="20" rx="4"/><text class="badt" x="60" y="145">skill 1 ←</text>
+            <rect class="gbox" x="230" y="60" width="160" height="100" rx="8"/><text class="s" x="242" y="80">人2</text>
+            <rect class="bad" x="245" y="88" width="130" height="20" rx="4"/><text class="badt" x="250" y="103">skill 1 ←</text>
+            <text class="s" x="250" y="130">skill 9</text><text class="s" x="250" y="150">skill 30</text>
+            <rect class="gbox" x="420" y="60" width="160" height="100" rx="8"/><text class="s" x="432" y="80">人3</text>
+            <text class="s" x="440" y="102">skill 5</text>
+            <rect class="bad" x="435" y="110" width="130" height="20" rx="4"/><text class="badt" x="440" y="125">skill 1 ←</text>
+          </g>
+          <circle cx="255" cy="235" r="20" fill="none" stroke="#5c6470" stroke-width="2.5"/>
+          <line x1="270" y1="250" x2="290" y2="270" stroke="#5c6470" stroke-width="3"/>
+          <text class="t" x="310" y="245">skill_id = 1 は？</text>
+          <text class="badt" x="310" y="300">✗ 全ブロックに散在 → 結局 SCAN</text>
+        </svg>
+        <figcaption>(人,スキル)順の目次はスキル検索に効かない</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="左端が合う複合インデックスは一発">
+          <text class="t" x="40" y="40">目次 (skill_id, 経験年数)</text>
+          <g>
+            <rect class="jbox" x="40" y="60" width="160" height="100" rx="8"/><text class="okt" x="52" y="80">skill 1</text>
+            <text class="s" x="60" y="102">人2 ・ 3年</text><text class="s" x="60" y="122">人3 ・ 5年</text><text class="s" x="60" y="142">人17 ・ 8年</text>
+            <rect class="gbox" x="230" y="60" width="160" height="100" rx="8"/><text class="s" x="242" y="80">skill 2</text>
+            <text class="s" x="250" y="102">…</text>
+            <rect class="gbox" x="420" y="60" width="160" height="100" rx="8"/><text class="s" x="432" y="80">skill 3</text>
+            <text class="s" x="440" y="102">…</text>
+          </g>
+          <circle cx="255" cy="235" r="20" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+          <line x1="270" y1="250" x2="290" y2="270" stroke="#16a34a" stroke-width="3"/>
+          <text class="t" x="310" y="245">skill_id = 1 は？</text>
+          <text class="okt" x="310" y="300">✓ 1ブロックに密集 → SEARCH 一発</text>
+        </svg>
+        <figcaption>(スキル,…)順なら目的の行が固まっている</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>正規化と凍結判断</h2>
+    <div class="figs cols-2">
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="更新アノマリー">
+          <rect class="box" x="30" y="120" width="160" height="60" rx="10"/>
+          <text class="t" x="50" y="145">companies</text>
+          <text class="s" x="50" y="167">name: ベータ社 ←変更</text>
+          <g>
+            <rect class="gbox" x="270" y="45"  width="150" height="46" rx="8"/><text class="s" x="284" y="73">案件1: アルファ社</text>
+            <rect class="gbox" x="440" y="45"  width="150" height="46" rx="8"/><text class="s" x="454" y="73">案件2: アルファ社</text>
+            <rect class="gbox" x="270" y="105" width="150" height="46" rx="8"/><text class="s" x="284" y="133">案件3: アルファ社</text>
+            <rect class="bad"  x="440" y="105" width="150" height="46" rx="8"/><text class="badt" x="454" y="133">案件4: ベータ社</text>
+            <rect class="gbox" x="270" y="165" width="150" height="46" rx="8"/><text class="s" x="284" y="193">…あと96件</text>
+          </g>
+          <text class="badt" x="310" y="265" text-anchor="middle" font-size="26">？</text>
+          <text class="badt" x="310" y="300" text-anchor="middle">どっちが正か、DBのどこにも書いていない</text>
+        </svg>
+        <figcaption>コピー101箇所、更新漏れで真実が消える</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 620 340" role="img" aria-label="追従か凍結か">
+          <polygon points="115,170 210,110 305,170 210,230" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+          <text class="t" x="210" y="165" text-anchor="middle">元が変わったら？</text>
+          <path class="ln" d="M290,140 L380,90"/><path class="ln" d="M290,200 L380,250"/>
+          <text class="lbl" x="300" y="105">追従すべき</text>
+          <text class="lbl" x="300" y="245">凍結すべき</text>
+          <rect class="jbox" x="380" y="60" width="200" height="60" rx="10"/>
+          <text class="okt" x="480" y="86" text-anchor="middle">コピー禁止</text>
+          <text class="s" x="480" y="106" text-anchor="middle">JOIN で毎回取る（正規化）</text>
+          <rect class="box" x="380" y="220" width="200" height="60" rx="10"/>
+          <text class="t" x="480" y="246" text-anchor="middle" fill="#2563eb">スナップショット ❄</text>
+          <text class="s" x="480" y="266" text-anchor="middle">見積書・注文明細の単価</text>
+        </svg>
+        <figcaption>追従なら正規化、凍結ならスナップショット</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>実測 61ms → 19ms</h2>
+    <figure>
+      <svg viewBox="0 0 900 250" role="img" aria-label="EXPLAIN実測比較">
+        <text class="t" x="40" y="60">インデックスなし</text>
+        <rect x="220" y="42" width="600" height="26" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+        <text class="badt" x="240" y="60">SCAN … 1,000,000 行ぜんぶ読む</text>
+        <text class="badt" x="838" y="60">61ms</text>
+        <text class="t" x="40" y="140">インデックスあり</text>
+        <rect x="220" y="122" width="187" height="26" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+        <text class="okt" x="234" y="140">SEARCH … 目次で短絡</text>
+        <text class="okt" x="425" y="140">19ms</text>
+        <text class="s" x="220" y="200">CREATE INDEX ON freelancer_skills (skill_id, freelancer_id) ＋ ANALYZE</text>
+        <text class="lbl" x="700" y="200">SCAN=全行読み ／ SEARCH=目次</text>
+      </svg>
+      <figcaption>同一クエリ・100万行実測。ANALYZE 後に約3倍</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>決定事項</h2>
+    <table>
+      <thead><tr><th>項目</th><th>決定</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>多対多</td><td>中間テーブルを関係ごとに1つ</td><td>片方欠けの NULL 破綻を防ぐ</td></tr>
+        <tr><td>履歴</td><td>モノとイベントを別テーブルに</td><td>COUNT水増し・UNIQUE不能を防ぐ</td></tr>
+        <tr><td>履歴の親</td><td>直近の親（application_id）に繋ぐ</td><td>どの応募の出来事か特定する</td></tr>
+        <tr><td>コピー</td><td>追従は禁止・凍結は保存</td><td>真実の在り処をDB内に保つ</td></tr>
+        <tr><td>インデックス</td><td>大きい表の一番絞れる列に張る</td><td>選択性が効果を決める</td></tr>
+        <tr><td>複合の列順</td><td>＝が先・範囲が後</td><td>左端の列から順にしか効かない</td></tr>
+        <tr><td>全テーブル共通</td><td>id・created_at を必ず置く</td><td>後から復元できない</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>リスク</h2>
+    <ul class="risks">
+      <li>ANALYZE 忘れ: 張っても使われない。まず統計を疑う</li>
+      <li>ORDER BY タイブレーク無しは順序不定でページ事故</li>
+      <li>教科書最適を実測なしで信じない。EXPLAIN で確認</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>
